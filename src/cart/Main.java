@@ -1,37 +1,89 @@
 package cart;
 
 import java.io.Console;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.LinkedList;
 import java.util.List;
 
 public class Main{
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
+
+        // default directory 
+        String directoryName = "db";
+        String pwd = System.getProperty("user.dir");
+        
+        // if dir is specified, use args[0]
+        if (args.length > 0){
+            directoryName = args[0];
+        }
+        
+        System.out.println("Directory>> " + directoryName);
+        String fullDirPath = pwd + File.separator + directoryName;
+        
+        File directory = new File(fullDirPath);
+
+        if (!directory.exists()){
+            try {
+                Path path = Paths.get(directoryName);
+                Files.createDirectory(path);
+            } catch (IOException e) {
+    
+                e.printStackTrace();
+            }
+        } else {
+            System.out.println("Directory already exists");
+        }
         
         Console cons = System.console();
-        List<String> cart = new LinkedList<>();
+        List<String> activeCart = new LinkedList<>();
+        String activeUser = "";
         boolean continueRunning = true;
         String input;
+        ShoppingCartDB shoppingCartDB = new ShoppingCartDB();
+        ShoppingCart cart = new ShoppingCart();
 
         System.out.println("Welcome to your shopping cart");
 
-        do {
+        while(continueRunning){
             input = cons.readLine("> ").trim().toLowerCase();
-            if (input.contains("add")){
-                addToCart(cart, input);
-            } else if (input.contains("delete")){
-                deleteFromCart(cart, input);
-            } else if (input.contains("list")){
-                listCart(cart);
-            } else if (input.contains("exit")){
-                exitCart(cart);
+            if (input.startsWith("login")){
+                activeUser = input.split(" ")[1].trim();
+                // List cart
+                activeCart = shoppingCartDB.loginAndLoadCart(activeUser, fullDirPath);
+
+
+            } else if (input.startsWith("add")){
+                cart.addToCart(activeCart, input);
+
+            } else if (input.startsWith("delete")){
+                cart.deleteFromCart(activeCart, input);
+
+            } else if (input.startsWith("list")){
+                cart.listCart(activeCart);
+
+            } else if (input.startsWith("save")){
+                shoppingCartDB.saveCart(activeUser, activeCart, fullDirPath);
+
+            } else if (input.startsWith("users")){
+                List<String> userList = shoppingCartDB.getUserList(fullDirPath);
+                for(String user : userList){
+                    System.out.println(user);
+                }
+
+            } else if (input.startsWith("exit")){
                 continueRunning = false;
+                break;
             } else {
                 System.out.println("Invalid input");
-                continue;
             }
+        }
 
-        } while (continueRunning);
+        
         
     }
 
